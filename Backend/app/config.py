@@ -19,3 +19,8 @@ PORT = int(os.getenv("PORT", "8000"))
 
 # AI configuration
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+
+# Arduino 101 hardware alert
+ARDUINO_PORT = os.getenv("ARDUINO_PORT", "")          # e.g. /dev/cu.usbmodem1401 ; empty = auto-detect
+ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
+ARDUINO_SIMULATE = os.getenv("ARDUINO_SIMULATE", "false").lower() == "true"

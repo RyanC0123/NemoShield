@@ -27,7 +27,7 @@ class Severity(str, Enum):
 
 
 class SecurityEvent(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     event_id: str = Field(min_length=1)
     timestamp: datetime

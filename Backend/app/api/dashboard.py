@@ -7,7 +7,7 @@ from app.models.api_schemas import (
     ErrorResponse,
 )
 from app.models.security_event import Severity
-from app.storage.dataset_loader import load_synthetic_events
+from app.storage.event_store import load_security_events
 
 
 router = APIRouter(
@@ -25,7 +25,7 @@ router = APIRouter(
         "Retrieve total security events, total alerts, "
         "and event counts grouped by severity. "
         "Alerts are generated from high and critical "
-        "severity events in the synthetic dataset."
+        "severity events from seeded and ingested events."
     ),
     responses={
         500: {
@@ -36,7 +36,7 @@ router = APIRouter(
 )
 
 def get_dashboard_summary():
-    events = load_synthetic_events()
+    events = load_security_events()
 
     severity_counts = {
         "low": 0,

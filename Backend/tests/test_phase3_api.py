@@ -120,18 +120,34 @@ def test_get_event_by_id_not_found():
 
 
 def test_analyze_event_success(monkeypatch):
-    def mock_generate_response(self, prompt):
-        assert "EVT-0011" in prompt
+    traces = []
 
+    def mock_analyze_with_trace(self, event):
+        assert event.event_id == "EVT-0011"
         return (
-            '{"summary": "Potential port scanning detected.", '
-            '"risk_level": "high", '
-            '"recommended_action": "Review firewall logs."}'
+            {
+                "classification": "suspicious",
+                "risk_score": 65,
+                "reason": "Potential port scanning detected.",
+                "recommended_action": "Review firewall logs.",
+            },
+            [
+                {
+                    "name": "lookup_related_events",
+                    "arguments": {"event_id": "EVT-0011"},
+                    "result": {"event_count": 1, "event_ids": ["EVT-0007"]},
+                    "status": "completed",
+                }
+            ],
         )
 
     monkeypatch.setattr(
-        "app.api.analysis.NemotronClient.generate_response",
-        mock_generate_response,
+        "app.api.analysis.AIAnalysisService.analyze_with_trace",
+        mock_analyze_with_trace,
+    )
+    monkeypatch.setattr(
+        "app.api.analysis.record_trace",
+        lambda **trace: traces.append(trace),
     )
 
     response = client.post(
@@ -151,16 +167,18 @@ def test_analyze_event_success(monkeypatch):
         "risk_level": "high",
         "recommended_action": "Review firewall logs.",
     }
+    assert traces[0]["tool_calls"][0]["name"] == "lookup_related_events"
+    assert traces[0]["result"]["summary"] == "Potential port scanning detected."
 
 
 def test_analyze_event_not_found(monkeypatch):
-    def fail_if_ai_called(self, prompt):
+    def fail_if_ai_called(self, event):
         raise AssertionError(
             "Nemotron should not be called for missing events"
         )
 
     monkeypatch.setattr(
-        "app.api.analysis.NemotronClient.generate_response",
+        "app.api.analysis.AIAnalysisService.analyze_with_trace",
         fail_if_ai_called,
     )
 
@@ -196,12 +214,20 @@ def test_analyze_event_invalid_id():
 
 
 def test_analyze_event_invalid_ai_response(monkeypatch):
-    def mock_generate_response(self, prompt):
-        return "This is not valid JSON."
+    def mock_analyze_with_trace(self, event):
+        return (
+            {
+                "classification": "unknown",
+                "risk_score": None,
+                "reason": "AI returned an invalid response.",
+                "recommended_action": "Flag for manual review and retain event logs.",
+            },
+            [],
+        )
 
     monkeypatch.setattr(
-        "app.api.analysis.NemotronClient.generate_response",
-        mock_generate_response,
+        "app.api.analysis.AIAnalysisService.analyze_with_trace",
+        mock_analyze_with_trace,
     )
 
     response = client.post(
@@ -214,7 +240,7 @@ def test_analyze_event_invalid_ai_response(monkeypatch):
     assert response.json() == {
         "error": {
             "code": "BAD_GATEWAY",
-            "message": "AI model returned an invalid analysis response",
+            "message": "AI analysis unavailable or inconclusive",
         }
     }
 
@@ -275,4 +301,3 @@ def test_dashboard_summary_success():
 
     assert alerts_response.status_code == 200
     assert data["total_alerts"] == alerts_response.json()["total"]
-

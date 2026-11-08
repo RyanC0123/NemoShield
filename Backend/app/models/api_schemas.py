@@ -38,7 +38,7 @@ class SecurityAlert(BaseModel):
     event_id: str
     severity: str
     message: str
-    status: Literal["open"] = "open"
+    status: Literal["open", "acknowledged"] = "open"
 
 
 class AlertListResponse(BaseModel):

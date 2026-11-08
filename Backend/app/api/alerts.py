@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.models.api_schemas import (
     SecurityAlert,
@@ -7,7 +7,8 @@ from app.models.api_schemas import (
     ErrorResponse,
 )
 from app.models.security_event import Severity
-from app.storage.dataset_loader import load_synthetic_events
+from app.storage.alert_store import acknowledge_alert, load_acknowledgments
+from app.storage.event_store import load_security_events
 
 
 router = APIRouter(
@@ -23,8 +24,8 @@ router = APIRouter(
     summary="List security alerts",
     description=(
         "Retrieve security alerts generated from high and "
-        "critical severity events. Alerts are generated "
-        "from the synthetic dataset and are not confirmed attacks."
+        "critical severity events. Seeded and ingested events "
+        "are not confirmed attacks."
     ),
     responses={
         500: {
@@ -35,7 +36,8 @@ router = APIRouter(
 )
 
 def get_alerts():
-    events = load_synthetic_events()
+    events = load_security_events()
+    acknowledgments = load_acknowledgments()
     alerts = []
 
     for event in events:
@@ -49,7 +51,11 @@ def get_alerts():
                     f"{event.event_type.value} event "
                     "requires investigation."
                 ),
-                status="open",
+                status=(
+                    "acknowledged"
+                    if f"ALT-{event.event_id}" in acknowledgments
+                    else "open"
+                ),
             )
             alerts.append(alert)
 
@@ -57,3 +63,26 @@ def get_alerts():
         alerts=alerts,
         total=len(alerts),
     )
+
+
+@router.post(
+    "/{alert_id}/acknowledge",
+    summary="Acknowledge a security alert",
+    description="Persist an operator acknowledgment for a known alert.",
+)
+def acknowledge_security_alert(alert_id: str):
+    events = load_security_events()
+    known_alert_ids = {
+        f"ALT-{event.event_id}"
+        for event in events
+        if event.severity in (Severity.HIGH, Severity.CRITICAL)
+    }
+    if alert_id not in known_alert_ids:
+        raise HTTPException(status_code=404, detail="Security alert not found")
+
+    acknowledgment = acknowledge_alert(alert_id)
+    return {
+        "alert_id": alert_id,
+        "status": "acknowledged",
+        "acknowledged_at": acknowledgment["acknowledged_at"],
+    }

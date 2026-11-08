@@ -159,12 +159,15 @@ class ArduinoAlertService:
             return False
 
     def status(self) -> dict:
+        available_ports = self.available_ports()
         with self._state_lock:
             last_button = self._button_acks[-1] if self._button_acks else None
             return {
                 "connected": self.connected,
                 "simulated": self.simulated,
                 "port": self.port,
+                "requested_port": self.requested_port,
+                "available_ports": available_ports,
                 "baud": self.baud,
                 "state": self.state,
                 "last_ack": self.last_ack,
@@ -192,12 +195,27 @@ class ArduinoAlertService:
     # ------------------------------------------------------------------ internals
 
     @staticmethod
+    def available_ports() -> list[dict[str, str]]:
+        if list_ports is None:
+            return []
+        return [
+            {
+                "device": port.device,
+                "description": port.description,
+            }
+            for port in list_ports.comports()
+        ]
+
+    @staticmethod
     def find_port() -> Optional[str]:
         if list_ports is None:
             return None
         for p in list_ports.comports():
             text = f"{p.device} {p.description} {p.manufacturer or ''}".lower()
-            if any(k in text for k in ("arduino", "genuino", "usbmodem", "ttyacm", "intel")):
+            if any(
+                marker in text
+                for marker in ("arduino", "genuino", "usbmodem", "ttyacm")
+            ):
                 return p.device
         return None
 
@@ -206,7 +224,10 @@ class ArduinoAlertService:
             raise HardwareError("pyserial is not installed (pip install pyserial)")
         port = self.requested_port or self.find_port()
         if not port:
-            raise HardwareError("No Arduino port found. Set ARDUINO_PORT in Backend/.env")
+            raise HardwareError(
+                "No Arduino-compatible serial port was detected. "
+                "Connect the board or set ARDUINO_PORT in Backend/.env."
+            )
 
         self._ser = serial.Serial(port, self.baud, timeout=0.2, write_timeout=1)
         self.port = port

@@ -109,6 +109,29 @@ def test_integration_repeated_decisions_are_consistent(pipeline):
     assert second["decision"]["response"]["executed"] is False
 
 
+def test_process_with_trace_returns_actual_tool_calls(tmp_path):
+    class ToolAnalysisService(AIAnalysisService):
+        def analyze_with_trace(self, event):
+            return self.mock_response(event), [
+                {
+                    "name": "lookup_related_events",
+                    "arguments": {"event_id": event.event_id},
+                    "result": {"event_count": 0, "event_ids": []},
+                    "status": "completed",
+                }
+            ]
+
+    pipeline = SecurityAnalysisPipeline(
+        analysis_service=ToolAnalysisService(mock_mode=True),
+        log_path=tmp_path / "decisions.jsonl",
+    )
+
+    record, tool_calls = pipeline.process_with_trace(make_event())
+
+    assert record["decision"]["response"]["executed"] is False
+    assert tool_calls[0]["name"] == "lookup_related_events"
+
+
 def test_invalid_event_rejected(pipeline):
     with pytest.raises(ValueError):
         pipeline.process({"event_id": "invalid"})

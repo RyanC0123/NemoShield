@@ -15,7 +15,7 @@ class NemotronClient:
             max_retries=2,
         )
 
-        self.model = "nvidia/nemotron-3.5-bolt-e4b"
+        self.model = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
     def generate_response(self, prompt: str) -> str:
         if not prompt.strip():
@@ -39,6 +39,11 @@ class NemotronClient:
                 },
             ],
             max_tokens=512,
+            extra_body={
+                "chat_template_kwargs": {
+                    "enable_thinking": False
+                }
+            },
         )
 
         return response.choices[0].message.content or ""

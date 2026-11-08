@@ -1,0 +1,30 @@
+{
+  "dataset_version": "1.0.0",
+  "dataset_file": "synthetic_events_v1.json",
+  "sha256": "e8e8c0b8b031616457248295c39db045c07416fd522980433e533cd01de93f04",
+  "expected_event_count": 16,
+  "expected_event_ids": [
+    "EVT-0001",
+    "EVT-0002",
+    "EVT-0003",
+    "EVT-0004",
+    "EVT-0005",
+    "EVT-0006",
+    "EVT-0007",
+    "EVT-0008",
+    "EVT-0009",
+    "EVT-0010",
+    "EVT-0011",
+    "EVT-0012",
+    "EVT-0013",
+    "EVT-0014",
+    "EVT-0015",
+    "EVT-0016"
+  ],
+  "expected_event_types": {
+    "brute_force": 4,
+    "normal_traffic": 4,
+    "port_scan": 4,
+    "suspicious_login": 4
+  }
+}

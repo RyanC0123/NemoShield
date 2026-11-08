@@ -4,7 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.config import APP_NAME, APP_ENV
 from app.api.hardware import router as hardware_router
+from app.api.agent_routes import router as agent_router
+from app.api.events import router as events_router
+from app.api.analysis import router as analysis_router
+from app.api.alerts import router as alerts_router
+from app.api.dashboard import router as dashboard_router
 from app.hardware.alert_service import get_alert_service
+from app.api.exception_handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -20,7 +26,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_exception_handlers(app)
+
 app.include_router(hardware_router)
+app.include_router(agent_router)
+app.include_router(events_router)
+app.include_router(analysis_router)
+app.include_router(alerts_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/")

@@ -9,7 +9,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="nvidia/nemotron-3.5-bolt-e4b",
+    model="nvidia/nemotron-3.5-lightning-30b-a3b",
     messages=[
         {
             "role": "user",
@@ -17,6 +17,11 @@ response = client.chat.completions.create(
         }
     ],
     max_tokens=150,
+    extra_body={
+    "chat_template_kwargs": {
+        "enable_thinking": False
+    }
+},
 )
 
 print(response.choices[0].message.content)

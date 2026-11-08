@@ -1,0 +1,11 @@
+# Light + dark themes. Switch via the top-right menu (⋮) > Settings > Theme.
+[theme]
+primaryColor = "#3b82f6"
+
+[theme.light]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f5f9"
+
+[theme.dark]
+backgroundColor = "#05070b"
+secondaryBackgroundColor = "#0a0e14"

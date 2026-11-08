@@ -9,6 +9,7 @@ from app.api.events import router as events_router
 from app.api.analysis import router as analysis_router
 from app.api.alerts import router as alerts_router
 from app.api.dashboard import router as dashboard_router
+from app.api.decision import router as decision_router
 from app.hardware.alert_service import get_alert_service
 from app.api.exception_handlers import register_exception_handlers
 
@@ -34,7 +35,7 @@ app.include_router(events_router)
 app.include_router(analysis_router)
 app.include_router(alerts_router)
 app.include_router(dashboard_router)
-
+app.include_router(decision_router)
 
 @app.get("/")
 def root():
